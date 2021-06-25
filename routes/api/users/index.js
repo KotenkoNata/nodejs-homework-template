@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../../../controllers/users-controllers');
 const guard = require('../../../helpers/guard');
+const upload = require('../../../helpers/upload');
 const {
   validationNewUser,
   validationLoginUser,
@@ -13,5 +14,6 @@ router.post('/login', validationLoginUser, ctrl.login);
 router.post('/logout', guard, ctrl.logout);
 router.get('/current', guard, ctrl.current);
 router.patch('/', guard, validationSubscription, ctrl.updateSubscription);
+router.patch('/avatars', guard, upload.single('avatar'), ctrl.avatars);
 
 module.exports = router;
