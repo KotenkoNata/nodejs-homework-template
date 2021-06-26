@@ -4,6 +4,11 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const SECRET_KEY = process.env.SECRET_KEY;
 
+const UploadAvatarService = require('../services/local-upload');
+
+const fs = require('fs/promises');
+const path = require('path');
+
 const signup = async (req, res, next) => {
   try {
     const user = await Users.findByUserEmail(req.body.email);
@@ -16,12 +21,14 @@ const signup = async (req, res, next) => {
       });
     }
 
-    const { id, email, subscription } = await Users.createUser(req.body);
+    const { id, email, subscription, avatarURL } = await Users.createUser(
+      req.body,
+    );
 
     return res.status(HttpCode.CREATED).json({
       status: 'success',
       code: HttpCode.CREATED,
-      data: { id, email, subscription },
+      data: { id, email, subscription, avatarURL },
     });
   } catch (e) {
     next(e);
@@ -36,7 +43,7 @@ const login = async (req, res, next) => {
       return res.status(HttpCode.UNAUTHORIZED).json({
         status: 'error',
         code: HttpCode.UNAUTHORIZED,
-        message: 'Invalid credentials +',
+        message: 'Invalid credentials',
       });
     }
     const id = user.id;
@@ -109,4 +116,34 @@ const updateSubscription = async (req, res, next) => {
   }
 };
 
-module.exports = { signup, login, logout, current, updateSubscription };
+const avatars = async (req, res, next) => {
+  try {
+    const id = req.user.id;
+    const uploads = new UploadAvatarService('public');
+    const avatarUrl = await uploads.saveAvatar({ idUser: id, file: req.file });
+    try {
+      await fs.unlink(path.join('public', req.user.avatarURL));
+    } catch (e) {
+      console.log(e.message);
+    }
+
+    await Users.updateAvatar(id, avatarUrl);
+    res.json({
+      status: 'success',
+      code: HttpCode.OK,
+      message: 'Avatar uploaded',
+      data: { avatarUrl },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  signup,
+  login,
+  logout,
+  current,
+  updateSubscription,
+  avatars,
+};
