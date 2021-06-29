@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const SALT_WORK_FACTOR = 8;
 const { Subscription } = require('../helpers/constants');
 const subscriptionOptions = Object.values(Subscription);
+const { v4: uuid } = require('uuid');
 
 const userSchema = new Schema(
   {
@@ -30,6 +31,15 @@ const userSchema = new Schema(
       default: function () {
         return gr.url(this.email, { s: '250' }, true);
       },
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verifyToken: {
+      type: String,
+      required: [true, 'Verify token is required'],
+      default: uuid(),
     },
   },
   {
